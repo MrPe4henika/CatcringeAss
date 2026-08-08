@@ -28,6 +28,14 @@
 	category = list("Equipment")
 	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL|DEPARTMENTAL_FLAG_SECURITY
 
+/datum/techweb_node/base/New()
+	var/extra_designs = list(
+		"heavy_roller_bed",
+		"normal_roller_bed"
+	)
+	LAZYADD(design_ids, extra_designs)
+	. = ..()
+
 /datum/design/nanite_protector
 	name = "Nanite Protector"
 	desc = "Экспериментальный инжектор, содержащий серую массу непонятного происхождения. При попадании в организм она необратимо меняет клетки и перестраивает структуры, не давая им взаимодействовать с нанитами. Использование более одного раза не несет эффекта."
