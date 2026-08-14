@@ -75,7 +75,6 @@
 	STOP_PROCESSING(SSinteractions, src)
 	for(var/datum/interaction_menu_panel/panel as anything in panels)
 		UnregisterSignal(panel.panel_target, COMSIG_PARENT_QDELETING)
-		panels -= panel
 		qdel(panel)
 	panels = null
 	auto_interaction_target = null
@@ -157,6 +156,8 @@
 	var/mob/living/target = panel?.panel_target
 	//Getting player
 	var/mob/living/self = parent
+	if(!self)
+		return
 	//Getting info
 	.["isTargetSelf"] = target == self // Why all of these?
 	.["user"] = self // Because people may have the same name
@@ -597,7 +598,7 @@
 			var/datum/interaction/custom/custom = customs[i]
 			if(!custom?.name || !custom.message)
 				continue
-			if(!custom.pass_requirement_gate(self, target))
+			if(target && !custom.pass_requirement_gate(self, target))
 				continue
 			custom_interactions_sent += list(build_custom_interaction_entry(custom, "[CUSTOM_INTERACTION_PREFIX][self.ckey]:[i]", self.real_name))
 	.["custom_interactions_list"] = custom_interactions_sent
@@ -683,7 +684,10 @@
 		else
 			return "No"
 
-/datum/component/interaction_menu_granter/ui_act(action, params)
+/datum/component/interaction_menu_granter/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+	. = ..()
+	if(.)
+		return
 	return panel_ui_act(null, action, params)
 
 /datum/component/interaction_menu_granter/proc/panel_ui_act(datum/interaction_menu_panel/panel, action, params)
@@ -700,7 +704,7 @@
 
 			var/current = hidden_interactions[interaction_key]
 			hidden_interactions[interaction_key] = !current
-			SStgui.update_uis(src)
+			refresh_interaction_panels()
 			return TRUE
 		if("interact")
 			var/interaction_key = params["interaction"]
@@ -1019,10 +1023,7 @@
 	custom.self_orgasm = text2num(params["self_orgasm"]) ? TRUE : FALSE
 	custom.partner_orgasm = text2num(params["partner_orgasm"]) ? TRUE : FALSE
 	custom.scope = sanitize_inlist(params["scope"], CUSTOM_INTERACTION_SCOPES, CUSTOM_INTERACTION_SCOPE_BOTH)
-	var/allowed_body_parts = NONE
-	for(var/requirement in CUSTOM_INTERACTION_BODY_PART_REQUIREMENTS)
-		allowed_body_parts |= requirement
-	custom.required_body_parts = sanitize_integer(text2num(params["required_body_parts"]), 0, allowed_body_parts, 0) & allowed_body_parts
+	custom.required_body_parts = sanitize_integer(text2num(params["required_body_parts"]), 0, CUSTOM_INTERACTION_BODY_PART_MASK, 0) & CUSTOM_INTERACTION_BODY_PART_MASK
 	custom.requires_tail = text2num(params["requires_tail"]) ? TRUE : FALSE
 	custom.requires_telekinesis = text2num(params["requires_telekinesis"]) ? TRUE : FALSE
 	custom.max_distance = sanitize_integer(text2num(params["max_distance"]), 1, 3, 1)
@@ -1053,10 +1054,7 @@
 	custom.self_orgasm = text2num(params["self_orgasm"]) ? TRUE : FALSE
 	custom.partner_orgasm = text2num(params["partner_orgasm"]) ? TRUE : FALSE
 	custom.scope = sanitize_inlist(params["scope"], CUSTOM_INTERACTION_SCOPES, CUSTOM_INTERACTION_SCOPE_BOTH)
-	var/allowed_body_parts = NONE
-	for(var/requirement in CUSTOM_INTERACTION_BODY_PART_REQUIREMENTS)
-		allowed_body_parts |= requirement
-	custom.required_body_parts = sanitize_integer(text2num(params["required_body_parts"]), 0, allowed_body_parts, 0) & allowed_body_parts
+	custom.required_body_parts = sanitize_integer(text2num(params["required_body_parts"]), 0, CUSTOM_INTERACTION_BODY_PART_MASK, 0) & CUSTOM_INTERACTION_BODY_PART_MASK
 	custom.requires_tail = text2num(params["requires_tail"]) ? TRUE : FALSE
 	custom.requires_telekinesis = text2num(params["requires_telekinesis"]) ? TRUE : FALSE
 	custom.max_distance = sanitize_integer(text2num(params["max_distance"]), 1, 3, 1)
@@ -1136,21 +1134,36 @@
 	return ..()
 
 /datum/interaction_menu_panel/ui_state(mob/living/user)
+	if(QDELETED(granter))
+		return GLOB.never_state
 	return granter.ui_state(user)
 
 /datum/interaction_menu_panel/ui_interact(mob/living/user, datum/tgui/ui)
+	if(QDELETED(granter))
+		return
 	granter.panel_ui_interact(src, user, ui)
 
 /datum/interaction_menu_panel/ui_data(mob/living/user)
+	if(QDELETED(granter))
+		return list()
 	return granter.panel_ui_data(src, user)
 
 /datum/interaction_menu_panel/ui_static_data(mob/living/user)
+	if(QDELETED(granter))
+		return list()
 	return granter.ui_static_data(user)
 
-/datum/interaction_menu_panel/ui_act(action, params)
+/datum/interaction_menu_panel/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(granter))
+		return FALSE
 	return granter.panel_ui_act(src, action, params)
 
 /datum/interaction_menu_panel/ui_close(mob/living/user)
+	if(QDELETED(granter))
+		return
 	granter.panel_ui_close(src, user)
 
 #undef INTERACTION_UNHOLY //SPLURT Edit
