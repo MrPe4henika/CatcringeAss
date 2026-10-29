@@ -1079,12 +1079,18 @@ GLOBAL_VAR_INIT(plush_reijo_mickie_active, 0)
 
 /obj/item/toy/plush/bm/brick/attack_self(mob/user)
 	..()
-	
+
 	if(icon_state == "no_pillow")
 		icon_state = "yes_pillow"
 		to_chat(user, span_notice("Вы сжимаете игрушку, и она меняет форму!"))
 	else
 		icon_state = "no_pillow"
 		to_chat(user, span_notice("Вы возвращаете игрушке прежний вид."))
-	
-	update_appearance() 
+
+	update_appearance()
+
+/obj/item/toy/plush/bm/cone
+	name = "Cone plush"
+	desc = "TORMOZI!!!"
+	icon_state = "cone"
+	squeak_override = list('modular_bluemoon/sound/plush/tormozi.ogg' = 70, 'modular_bluemoon/sound/plush/kefurmeow.ogg' = 30)
